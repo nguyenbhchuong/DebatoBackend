@@ -10,11 +10,11 @@ export class AppController {
     return this.appService.getHello();
   }
   @Post('register')
-  register(email, password, repassword): string {
-    return this.appService.register(email, password, repassword);
+  async register(email, password, repassword){
+    return this.appService.register({email, password, repassword});
   }
   @Post('login')
-  login(email, password): string {
-    return this.appService.login(email, password);
+  async login(email, password){
+    return this.appService.login({email, password});
   }
 }
