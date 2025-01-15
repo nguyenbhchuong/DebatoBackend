@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
 import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/CreateUser.dto';
+import { InputUserDto} from './dto/User.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -22,4 +23,5 @@ export class UsersService {
   async findOne(email): Promise<User | undefined> {
     return this.userModel.findOne({ email });
   }
+  
 }

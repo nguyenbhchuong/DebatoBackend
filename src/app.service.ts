@@ -10,26 +10,6 @@ export class AppService {
   getHello(): string {
     return 'Hello World!';
   }
-  async register(user: { email: string; password: string }) {
-    const { email, password } = user;
-    //Check fields
-    if (!user.email || !user.password) {
-      return 'All fields must be filled';
-    }
-    //Check Database if Email already existed
-    const existingUser = await this.userModel.findOne({ email });
-    if (existingUser) {
-      return 'User already existes';
-    }
-    //Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    //Save new to Database
-    const newUser = new this.userModel({ email, password: hashedPassword });
-    newUser.save();
-    return 'Register Successfully';
-  }
-
   async login(user: { email: string; password: string }) {
     //Check fields
     const { email, password } = user;

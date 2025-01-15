@@ -9,10 +9,6 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-  @Post('register')
-  async register(@Body() user: { email: string; password: string }) {
-    return this.appService.register(user);
-  }
   @Post('login')
   async login(email, password) {
     return this.appService.login({ email, password });
