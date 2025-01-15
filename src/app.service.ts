@@ -22,7 +22,7 @@ export class AppService {
       return 'User already existes';
     }
     //Hash the password
-    const hashedPassword = bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     //Save new to Database
     const newUser = new this.userModel({ email, password: hashedPassword });
