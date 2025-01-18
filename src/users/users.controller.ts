@@ -4,10 +4,11 @@ import { CreateUserDto } from './dto/CreateUser.dto';
 import { InputUserDto } from './dto/User.dto';
 import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
+import { AuthService } from 'src/auth/auth.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private usersService: UsersService, private authService: AuthService) {}
   @Post('register')
   async createUser(@Body() createUser: CreateUserDto, @Res() res: Response) {
     const { email } = createUser;
@@ -28,7 +29,9 @@ export class UsersController {
     const checkUser = await this.usersService.findOne(email);
     if (checkUser) {
       if (await bcrypt.compare(password, checkUser.password)) {
-        res.status(HttpStatus.OK).json({ message: 'Login Successfully' });
+        const id : string = checkUser._id.toString();
+        const token = this.authService.login(id);
+        res.status(HttpStatus.OK).json({ message: 'Login Successfully', token: token});
       } else {
         res.status(HttpStatus.BAD_REQUEST).json({ message: 'User not found' });
       }

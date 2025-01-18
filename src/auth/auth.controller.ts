@@ -1,8 +1,10 @@
-import { Controller, Get, UseGuards, Res, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Res, Req, Post } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
+    constructor(private readonly authService: AuthService) {}
 
     @Get('google')
     @UseGuards(AuthGuard('google'))
@@ -29,5 +31,10 @@ export class AuthController {
     protectedResource()
     {
         return 'JWT is working!';
+    }
+    @Post('login-token')
+    async logintoken(@Req() req){
+        const token = this.authService.login(req.userID);
+        return token;
     }
 }
