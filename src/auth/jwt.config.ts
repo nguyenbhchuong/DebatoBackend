@@ -4,7 +4,7 @@ import {JwtModuleOptions} from "@nestjs/jwt";
 export default registerAs(
     "jwt", 
     (): JwtModuleOptions => ({
-    secret: "THISISAVERYSERIOUSANDSECRETKEY@BAICO1212144422221",
+    secret: process.env.JWT_KEY,
     signOptions: {
         expiresIn: "1d",
     }
