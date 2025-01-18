@@ -1,4 +1,4 @@
-import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Res, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/CreateUser.dto';
 import { InputUserDto } from './dto/User.dto';
@@ -23,7 +23,7 @@ export class UsersController {
   }
 
   @Post('login')
-  async verifyUser(@Body() inputUser: InputUserDto, @Res() res: Response) {
+  async verifyUser(@Body() inputUser: InputUserDto, @Res() res: Response, @Req() req: Request) {
     const { email, password } = inputUser;
     const checkUser = await this.usersService.findOne(email);
     if (checkUser) {
