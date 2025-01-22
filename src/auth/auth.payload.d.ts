@@ -1,3 +1,3 @@
 export type AuthPayload = {
-    sub: string;
-}
+  sub: string;
+};
