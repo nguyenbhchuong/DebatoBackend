@@ -1,4 +1,12 @@
-import { Body, Controller, HttpStatus, Post, Res, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpStatus,
+  Post,
+  Res,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { CreateUserDto } from '../dto/CreateUser.dto';
 import { InputUserDto } from '../dto/User.dto';
 import { Response } from 'express';
@@ -6,6 +14,7 @@ import * as bcrypt from 'bcrypt';
 import { AuthService } from 'src/auth/services/auth.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { UsersService } from '../services/users.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Users')
 @Controller('users')
@@ -48,30 +57,21 @@ export class UsersController {
     },
   })
   @ApiResponse({
-    status: 400,
-    description: 'User not found or invalid credentials',
+    status: 401,
+    description: 'Invalid credentials',
   })
   @ApiBody({ type: InputUserDto })
+  @UseGuards(AuthGuard('local'))
   @Post('login')
-  async verifyUser(
-    @Body() inputUser: InputUserDto,
-    @Res() res: Response,
-    @Req() req: Request,
-  ) {
-    const { email, password } = inputUser;
-    const checkUser = await this.usersService.findOne(email);
-    if (checkUser) {
-      if (await bcrypt.compare(password, checkUser.password)) {
-        const id: string = checkUser._id.toString();
-        const token = this.authService.login(id);
-        res
-          .status(HttpStatus.OK)
-          .json({ message: 'Login Successfully', token: token });
-      } else {
-        res.status(HttpStatus.BAD_REQUEST).json({ message: 'User not found' });
-      }
-    } else {
-      res.status(HttpStatus.BAD_REQUEST).json({ message: 'User not found' });
-    }
+  async login(@Req() req) {
+    const token = this.authService.login(req.user.id);
+    return {
+      message: 'Login Successfully',
+      token,
+      user: {
+        email: req.user.email,
+        roles: req.user.roles,
+      },
+    };
   }
 }

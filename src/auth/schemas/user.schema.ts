@@ -8,11 +8,22 @@ export class User {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
-  password: string;
+  @Prop({ required: false }) // Optional for Google OAuth users
+  password?: string;
 
-  _id : Types.ObjectId;
+  @Prop({ required: false })
+  googleId?: string;
 
+  @Prop({ required: false })
+  displayName?: string;
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
+  @Prop({ type: [String], default: ['user'] })
+  roles: string[];
+
+  _id: Types.ObjectId;
 }
-export const UserSchema = SchemaFactory.createForClass(User);
 
+export const UserSchema = SchemaFactory.createForClass(User);

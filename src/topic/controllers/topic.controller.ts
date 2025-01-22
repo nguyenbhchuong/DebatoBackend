@@ -7,13 +7,25 @@ import {
   Delete,
   Body,
   Param,
+  UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { TopicService } from '../services/topic.service';
 import { CreateTopicDto } from '../dto/CreateTopic.dto';
 import { Topic } from '../schemas/topic.schema';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { Types } from 'mongoose';
 
-@ApiTags('topics')
+@ApiTags('Topics')
+@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 @Controller('topic')
 export class TopicController {
   constructor(private readonly topicService: TopicService) {}
@@ -25,8 +37,14 @@ export class TopicController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @Post()
-  async create(@Body() createTopicDto: CreateTopicDto): Promise<Topic> {
-    return this.topicService.create(createTopicDto);
+  async create(
+    @Body() createTopicDto: CreateTopicDto,
+    @Req() req,
+  ): Promise<Topic> {
+    return this.topicService.create({
+      ...createTopicDto,
+      user_id: new Types.ObjectId(req.user.sub),
+    });
   }
 
   @ApiOperation({ summary: 'Get all topics' })
@@ -50,11 +68,17 @@ export class TopicController {
     description: 'The topic has been successfully updated.',
   })
   @ApiResponse({ status: 404, description: 'Topic not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not the topic owner.' })
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() updateTopicDto: CreateTopicDto,
+    @Req() req,
   ): Promise<Topic> {
+    const topic = await this.topicService.findOne(id);
+    if (topic.user_id.toString() !== req.user.sub) {
+      throw new ForbiddenException('You can only update your own topics');
+    }
     return this.topicService.update(id, updateTopicDto);
   }
 
@@ -64,8 +88,17 @@ export class TopicController {
     description: 'The topic has been successfully deleted.',
   })
   @ApiResponse({ status: 404, description: 'Topic not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Not the topic owner.' })
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: string, @Req() req): Promise<void> {
+    const topic = await this.topicService.findOne(id);
+    console.log('====================================');
+    console.log(topic);
+    console.log(req.user.sub);
+    console.log('====================================');
+    if (topic.user_id.toString() !== req.user.sub) {
+      throw new ForbiddenException('You can only delete your own topics');
+    }
     return this.topicService.remove(id);
   }
 }

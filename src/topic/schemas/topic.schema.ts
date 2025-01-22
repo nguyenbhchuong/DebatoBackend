@@ -6,9 +6,6 @@ export type TopicDocument = Topic & Document;
 @Schema()
 export class Topic {
   @Prop({ required: true })
-  id: Types.ObjectId;
-
-  @Prop({ required: true })
   title: string;
 
   @Prop()
