@@ -4,6 +4,7 @@ import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './services/auth.service';
 import { GoogleStrategy } from './google.strategy';
 import { JwtStrategy } from './jwt.strategy';
+import { LocalStrategy } from './local.strategy';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import jwtConfig from './jwt.config';
 import { UsersController } from './controllers/users.controller';
@@ -15,7 +16,13 @@ import { User, UserSchema } from './schemas/user.schema';
     JwtModule.registerAsync(jwtConfig.asProvider()),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [AuthService, GoogleStrategy, JwtStrategy, UsersService],
+  providers: [
+    AuthService,
+    GoogleStrategy,
+    JwtStrategy,
+    LocalStrategy,
+    UsersService,
+  ],
   controllers: [AuthController, UsersController],
 })
 export class AuthModule {}

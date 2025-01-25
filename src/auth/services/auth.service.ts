@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { sign } from 'jsonwebtoken';
 import { AuthPayload } from '../auth.payload';
+import { CookieOptions } from 'express';
 
 export enum Provider {
   GOOGLE = 'google',
@@ -16,7 +17,7 @@ export class AuthService {
   async validateOAuthLogin(
     thirdPartyId: string,
     provider: Provider,
-  ): Promise<string> {
+  ): Promise<{ token: string; cookieOptions: CookieOptions }> {
     try {
       // You can add some registration logic here,
       // to register the user using their thirdPartyId (in this case their googleId)
@@ -31,20 +32,38 @@ export class AuthService {
       };
 
       const jwt: string = sign(payload, this.JWT_SECRET_KEY, {
-        expiresIn: 3600,
+        expiresIn: '1d',
       });
-      return jwt;
+
+      return {
+        token: jwt,
+        cookieOptions: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax' as const,
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+        },
+      };
     } catch (err) {
       throw new InternalServerErrorException('validateOAuthLogin', err.message);
     }
   }
 
-  login(userID: string) {
+  login(userID: string): { token: string; cookieOptions: CookieOptions } {
     const payload: AuthPayload = { sub: userID };
     // console.log('this is userID: ' + userID);
     // console.log('this is JWT key: ' + this.JWT_SECRET_KEY);
     // console.log('string merge: ' + userID + this.JWT_SECRET_KEY);
-    const jwt: string = sign(payload, this.JWT_SECRET_KEY, { expiresIn: 3600 });
-    return jwt;
+    const jwt: string = sign(payload, this.JWT_SECRET_KEY, { expiresIn: '1d' });
+
+    return {
+      token: jwt,
+      cookieOptions: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+      },
+    };
   }
 }

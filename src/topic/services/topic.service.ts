@@ -1,7 +1,7 @@
 // This file will define the TopicService class
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Topic, TopicDocument } from '../schemas/topic.schema';
 import { CreateTopicDto } from '../dto/CreateTopic.dto';
 
@@ -11,7 +11,9 @@ export class TopicService {
     @InjectModel(Topic.name) private topicModel: Model<TopicDocument>,
   ) {}
 
-  async create(createTopicDto: CreateTopicDto): Promise<Topic> {
+  async create(
+    createTopicDto: CreateTopicDto & { user_id: Types.ObjectId },
+  ): Promise<Topic> {
     const createdTopic = new this.topicModel(createTopicDto);
     return createdTopic.save();
   }
@@ -26,7 +28,7 @@ export class TopicService {
 
   async update(id: string, updateTopicDto: CreateTopicDto): Promise<Topic> {
     return this.topicModel
-      .findByIdAndUpdate(id, updateTopicDto, { new: true })
+      .findByIdAndUpdate(id, { $set: updateTopicDto }, { new: true })
       .exec();
   }
 
