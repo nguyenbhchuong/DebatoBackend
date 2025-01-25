@@ -34,6 +34,20 @@ export class AuthController {
     const jwt: string = req.user.jwt;
     if (jwt) res.redirect('http://localhost:4200/testSuccess?token=' + jwt);
     else res.redirect('http://localhost:4200/login/');
+    //cookie logic here
+    // res.cookie('jwt', jwt, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production',
+    //   sameSite: 'lax' as const,
+    //   expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+    // });
+    // return res.json({
+    //   message: 'Login Successfully',
+    //   user: {
+    //     email: req.user.email,
+    //     roles: req.user.roles,
+    //   },
+    // });
   }
 
   @ApiOperation({ summary: 'Access protected resource' })
@@ -52,5 +66,20 @@ export class AuthController {
   async logintoken(@Req() req) {
     const token = this.authService.login(req.userID);
     return token;
+  }
+
+  @ApiOperation({ summary: 'Check authentication status' })
+  @ApiResponse({ status: 200, description: 'User is authenticated' })
+  @ApiResponse({ status: 401, description: 'User is not authenticated' })
+  @Get('check-auth')
+  @UseGuards(AuthGuard('jwt'))
+  checkAuth(@Req() req) {
+    return {
+      authenticated: true,
+      user: {
+        id: req.user.sub,
+        email: req.user.email,
+      },
+    };
   }
 }

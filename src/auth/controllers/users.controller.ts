@@ -49,9 +49,12 @@ export class UsersController {
     schema: {
       properties: {
         message: { type: 'string', example: 'Login Successfully' },
-        token: {
-          type: 'string',
-          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: {
+          type: 'object',
+          properties: {
+            email: { type: 'string' },
+            roles: { type: 'array', items: { type: 'string' } },
+          },
         },
       },
     },
@@ -63,15 +66,17 @@ export class UsersController {
   @ApiBody({ type: InputUserDto })
   @UseGuards(AuthGuard('local'))
   @Post('login')
-  async login(@Req() req) {
-    const token = this.authService.login(req.user.id);
-    return {
+  async login(@Req() req, @Res() res: Response) {
+    const { token, cookieOptions } = this.authService.login(req.user.id);
+
+    res.cookie('jwt', token, cookieOptions);
+
+    return res.json({
       message: 'Login Successfully',
-      token,
       user: {
         email: req.user.email,
         roles: req.user.roles,
       },
-    };
+    });
   }
 }

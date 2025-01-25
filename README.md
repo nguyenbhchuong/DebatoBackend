@@ -17,6 +17,23 @@ DebatoBackend is a backend application designed to handle authentication and oth
   - **dto/**: Data Transfer Objects for defining data shapes.
   - **schemas/**: Schema definitions for validation or database models.
 
+## Authentication
+
+- The JWT token is now stored in an HTTPOnly cookie named 'jwt'
+- The cookie is:
+  - HTTPOnly (can't be accessed by JavaScript)
+  - Secure in production (only sent over HTTPS)
+  - SameSite=Lax (provides CSRF protection while allowing normal navigation)
+  - Expires in 1 day
+- To complete the setup, you need to:
+
+  - Install the cookie-parser package:
+  - Update your frontend code to:
+    - Include credentials in your API calls:
+
+- Remove any JWT token storage from localStorage/sessionStorage
+  - For your JWT strategy, you'll need to extract the token from cookies instead of the Authorization header. I can help you modify that if needed.
+
 ## Installation
 
 1. Clone the repository:
