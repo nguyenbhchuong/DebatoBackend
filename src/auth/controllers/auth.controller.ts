@@ -30,24 +30,28 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   googleLoginCallback(@Req() req, @Res() res) {
-    // handles the Google OAuth2 callback
-    const jwt: string = req.user.jwt;
-    if (jwt) res.redirect('http://localhost:4200/testSuccess?token=' + jwt);
-    else res.redirect('http://localhost:4200/login/');
-    //cookie logic here
-    // res.cookie('jwt', jwt, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === 'production',
-    //   sameSite: 'lax' as const,
-    //   expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
-    // });
-    // return res.json({
-    //   message: 'Login Successfully',
-    //   user: {
-    //     email: req.user.email,
-    //     roles: req.user.roles,
-    //   },
-    // });
+    if (!req.user) {
+      console.log('No user data received from Google');
+      return res.redirect('http://localhost:4200/login');
+    }
+
+    const { jwt } = req.user;
+
+    if (jwt) {
+      // Set JWT as HTTP-only cookie with proper options
+      res.cookie('jwt', jwt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
+      });
+
+      console.log('JWT token set in cookie:', jwt);
+      return res.redirect('http://localhost:4200/topic');
+    } else {
+      console.log('JWT token not found in user object:', req.user);
+      return res.redirect('http://localhost:4200/login');
+    }
   }
 
   @ApiOperation({ summary: 'Access protected resource' })
@@ -74,11 +78,13 @@ export class AuthController {
   @Get('check-auth')
   @UseGuards(AuthGuard('jwt'))
   checkAuth(@Req() req) {
+    const user = req.user;
     return {
       authenticated: true,
       user: {
-        id: req.user.sub,
-        email: req.user.email,
+        id: user.sub,
+        email: user.email,
+        provider: user.provider || 'jwt',
       },
     };
   }

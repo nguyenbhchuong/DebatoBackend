@@ -6,6 +6,7 @@ import { User, UserSchema } from './auth/schemas/user.schema';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { TopicModule } from './topic/topic.module';
+import { UserInfoModule } from './user-info/user-info.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TopicModule } from './topic/topic.module';
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     AuthModule,
     TopicModule,
+    UserInfoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

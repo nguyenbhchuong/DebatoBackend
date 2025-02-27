@@ -49,11 +49,17 @@ export class AuthService {
     }
   }
 
-  login(userID: string): { token: string; cookieOptions: CookieOptions } {
-    const payload: AuthPayload = { sub: userID };
-    // console.log('this is userID: ' + userID);
-    // console.log('this is JWT key: ' + this.JWT_SECRET_KEY);
-    // console.log('string merge: ' + userID + this.JWT_SECRET_KEY);
+  login(
+    userID: string,
+    email?: string,
+    provider: string = 'jwt',
+  ): { token: string; cookieOptions: CookieOptions } {
+    const payload = {
+      sub: userID,
+      email,
+      provider,
+    };
+
     const jwt: string = sign(payload, this.JWT_SECRET_KEY, { expiresIn: '1d' });
 
     return {

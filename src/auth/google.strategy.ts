@@ -51,7 +51,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         }
       }
 
-      const jwt = await this.authService.login(user._id.toString());
+      const { token: jwt, cookieOptions } = await this.authService.login(
+        user._id.toString(),
+        user.email,
+        'google',
+      );
 
       done(null, {
         jwt,
@@ -59,6 +63,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
           id: user._id,
           email: user.email,
           roles: user.roles,
+          provider: 'google',
         },
       });
     } catch (err) {
