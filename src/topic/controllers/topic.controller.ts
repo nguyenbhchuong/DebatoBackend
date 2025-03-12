@@ -180,8 +180,14 @@ export class TopicController {
     const cleanFilename = path.basename(filename.replace(/\\/g, '/'));
     const filePath = path.join('uploads/topics', cleanFilename);
 
-    // Set content type based on file extension
-    const contentType = mime.lookup(filePath) || 'application/octet-stream';
+    // Set content type based on file extension, with special handling for jfif
+    let contentType = mime.lookup(filePath) || 'application/octet-stream';
+
+    // Handle .jfif files specifically
+    if (path.extname(filePath).toLowerCase() === '.jfif') {
+      contentType = 'image/jpeg';
+    }
+
     res.set({
       'Content-Type': contentType,
       'Content-Disposition': `inline; filename="${cleanFilename}"`,

@@ -26,6 +26,8 @@ import { UserInfoModule } from '../user-info/user-info.module';
           'image/jpeg',
           'image/png',
           'image/gif',
+          'image/webp',
+          'image/jfif',
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
