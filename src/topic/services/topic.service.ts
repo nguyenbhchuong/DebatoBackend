@@ -7,12 +7,16 @@ import { CreateTopicDto } from '../dto/CreateTopic.dto';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UserInfoService } from '../../user-info/services/user-info.service';
+import { Reaction, ReactionDocument } from '../schemas/reaction.schema';
+import { PubSubService } from '../../shared/services/pub-sub.service';
 
 @Injectable()
 export class TopicService {
   constructor(
     @InjectModel(Topic.name) private topicModel: Model<TopicDocument>,
+    @InjectModel(Reaction.name) private reactionModel: Model<ReactionDocument>,
     private userInfoService: UserInfoService,
+    private readonly pubSubService: PubSubService,
   ) {}
 
   private readonly uploadDirectory = 'uploads/topics';
@@ -73,49 +77,62 @@ export class TopicService {
       file_links: filePaths,
     });
 
-    return createdTopic.save();
+    const savedTopic = await createdTopic.save();
+
+    // Publish message to Pub/Sub after successful creation
+    await this.pubSubService.publish('tag-new-topic', null, {
+      post_id: savedTopic._id.toString(),
+    });
+
+    return savedTopic;
   }
 
-  async findAll(): Promise<any[]> {
+  async findAll(userId?: string): Promise<any[]> {
     const topics = await this.topicModel.find().exec();
 
-    // Get user info for all topics
-    const topicsWithUserInfo = await Promise.all(
+    const topicsWithInfo = await Promise.all(
       topics.map(async (topic) => {
         const userInfo = await this.userInfoService.findByUserId(
           topic.user_id.toString(),
         );
+
+        const userReaction = userId
+          ? await this.getUserReaction(topic._id.toString(), userId)
+          : null;
+
         return {
           ...topic.toJSON(),
           user: {
             displayName: userInfo.displayName,
             idName: userInfo.idName,
           },
+          userReaction,
         };
       }),
     );
 
-    return topicsWithUserInfo;
+    return topicsWithInfo;
   }
 
-  async findOne(id: string): Promise<any> {
+  async findOne(id: string, userId?: string): Promise<any> {
     const topic = await this.topicModel.findById(id).exec();
     if (!topic) {
       throw new NotFoundException('Topic not found');
     }
 
-    // Get user info
     const userInfo = await this.userInfoService.findByUserId(
       topic.user_id.toString(),
     );
 
-    // Return topic with user info
+    const userReaction = userId ? await this.getUserReaction(id, userId) : null;
+
     return {
       ...topic.toJSON(),
       user: {
         displayName: userInfo.displayName,
         idName: userInfo.idName,
       },
+      userReaction,
     };
   }
 
@@ -141,5 +158,114 @@ export class TopicService {
     } catch (error) {
       throw new NotFoundException('File not found');
     }
+  }
+
+  async addReaction(
+    topicId: string,
+    userId: string,
+    type: number,
+  ): Promise<void> {
+    const session = await this.reactionModel.startSession();
+    session.startTransaction();
+
+    try {
+      // Find existing reaction
+      const existingReaction = await this.reactionModel.findOne({
+        topic_id: new Types.ObjectId(topicId),
+        user_id: new Types.ObjectId(userId),
+      });
+
+      if (existingReaction) {
+        if (type === 0) {
+          // Remove reaction if same type (toggle off)
+          await this.reactionModel.deleteOne({
+            _id: existingReaction._id,
+          });
+
+          // Update counts
+          if (existingReaction.type === 1) {
+            await this.topicModel.updateOne(
+              { _id: new Types.ObjectId(topicId) },
+              { $inc: { support_count: -1 } },
+            );
+          } else {
+            await this.topicModel.updateOne(
+              { _id: new Types.ObjectId(topicId) },
+              { $inc: { oppose_count: -1 } },
+            );
+          }
+        } else {
+          // Update reaction type if different
+          await this.reactionModel.updateOne(
+            { _id: existingReaction._id },
+            { type },
+          );
+
+          // Update counts
+          if (type === 1) {
+            await this.topicModel.updateOne(
+              { _id: new Types.ObjectId(topicId) },
+              {
+                $inc: {
+                  support_count: 1,
+                  oppose_count: -1,
+                },
+              },
+            );
+          } else {
+            await this.topicModel.updateOne(
+              { _id: new Types.ObjectId(topicId) },
+              {
+                $inc: {
+                  support_count: -1,
+                  oppose_count: 1,
+                },
+              },
+            );
+          }
+        }
+      } else {
+        if (type === 0) {
+          throw new Error('Reaction type cannot be 0');
+        }
+        // Create new reaction
+        await this.reactionModel.create({
+          topic_id: new Types.ObjectId(topicId),
+          user_id: new Types.ObjectId(userId),
+          type,
+        });
+
+        // Update count
+        if (type === 1) {
+          await this.topicModel.updateOne(
+            { _id: new Types.ObjectId(topicId) },
+            { $inc: { support_count: 1 } },
+          );
+        } else if (type === 2) {
+          await this.topicModel.updateOne(
+            { _id: new Types.ObjectId(topicId) },
+            { $inc: { oppose_count: 1 } },
+          );
+        }
+      }
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+
+  async getUserReaction(
+    topicId: string,
+    userId: string,
+  ): Promise<number | null> {
+    const reaction = await this.reactionModel.findOne({
+      topic_id: new Types.ObjectId(topicId),
+      user_id: new Types.ObjectId(userId),
+    });
+    return reaction ? reaction.type : null;
   }
 }

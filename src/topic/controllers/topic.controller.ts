@@ -34,6 +34,7 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import * as path from 'path';
 import * as mime from 'mime-types';
+import { CreateReactionDto } from '../dto/reaction.dto';
 
 @ApiTags('Topics')
 @ApiBearerAuth()
@@ -116,16 +117,16 @@ export class TopicController {
   @ApiOperation({ summary: 'Get all topics' })
   @ApiResponse({ status: 200, description: 'Return all topics.' })
   @Get()
-  async findAll(): Promise<Topic[]> {
-    return this.topicService.findAll();
+  async findAll(@Req() req): Promise<Topic[]> {
+    return this.topicService.findAll(req.user.sub);
   }
 
   @ApiOperation({ summary: 'Get a topic by ID' })
   @ApiResponse({ status: 200, description: 'Return the topic.' })
   @ApiResponse({ status: 404, description: 'Topic not found.' })
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Topic> {
-    return this.topicService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req): Promise<Topic> {
+    return this.topicService.findOne(id, req.user.sub);
   }
 
   @ApiOperation({ summary: 'Update a topic by ID' })
@@ -194,5 +195,17 @@ export class TopicController {
     });
 
     return this.topicService.getMedia(filePath);
+  }
+
+  @Post(':id/reaction')
+  @ApiOperation({ summary: 'Add/update/remove reaction to a topic' })
+  @ApiResponse({ status: 200, description: 'Reaction processed successfully' })
+  @ApiResponse({ status: 404, description: 'Topic not found' })
+  async addReaction(
+    @Param('id') id: string,
+    @Body() reactionDto: CreateReactionDto,
+    @Req() req,
+  ): Promise<void> {
+    return this.topicService.addReaction(id, req.user.sub, reactionDto.type);
   }
 }

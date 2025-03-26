@@ -8,10 +8,15 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { UserInfoModule } from '../user-info/user-info.module';
+import { Reaction, ReactionSchema } from './schemas/reaction.schema';
+import { PubSubService } from '../shared/services/pub-sub.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Topic.name, schema: TopicSchema }]),
+    MongooseModule.forFeature([
+      { name: Topic.name, schema: TopicSchema },
+      { name: Reaction.name, schema: ReactionSchema },
+    ]),
     MulterModule.register({
       storage: diskStorage({
         destination: './uploads/topics',
@@ -47,6 +52,6 @@ import { UserInfoModule } from '../user-info/user-info.module';
     UserInfoModule,
   ],
   controllers: [TopicController],
-  providers: [TopicService],
+  providers: [TopicService, PubSubService],
 })
 export class TopicModule {}

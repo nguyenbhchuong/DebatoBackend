@@ -30,15 +30,24 @@ export class UsersController {
   @ApiBody({ type: CreateUserDto })
   @Post('register')
   async createUser(@Body() createUser: CreateUserDto, @Res() res: Response) {
-    const { email } = createUser;
-    const existingUser = await this.usersService.findOne(email);
-    if (existingUser) {
-      res
-        .status(HttpStatus.BAD_REQUEST)
-        .json({ message: 'User already exists' });
-    } else {
+    try {
+      const { email } = createUser;
+      console.log('controller', createUser);
+
+      const existingUser = await this.usersService.findOne(email);
+      if (existingUser) {
+        return res
+          .status(HttpStatus.BAD_REQUEST)
+          .json({ message: 'User already exists' });
+      }
+
       const createdUser = await this.usersService.create(createUser);
-      res.status(HttpStatus.CREATED).json(createdUser);
+      return res.status(HttpStatus.CREATED).json(createdUser);
+    } catch (error) {
+      console.error('Registration error:', error);
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Error creating user' });
     }
   }
 
