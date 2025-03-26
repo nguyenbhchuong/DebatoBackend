@@ -8,7 +8,13 @@ async function bootstrap() {
   require('dotenv').config();
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.use(cookieParser());
 
   // Swagger configuration

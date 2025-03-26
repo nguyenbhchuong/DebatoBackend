@@ -10,11 +10,13 @@ import jwtConfig from './jwt.config';
 import { UsersController } from './controllers/users.controller';
 import { UsersService } from './services/users.service';
 import { User, UserSchema } from './schemas/user.schema';
+import { UserInfoModule } from '../user-info/user-info.module';
 
 @Module({
   imports: [
     JwtModule.registerAsync(jwtConfig.asProvider()),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    UserInfoModule,
   ],
   providers: [
     AuthService,
